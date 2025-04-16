@@ -60,16 +60,25 @@ const getTripList = async (req, res) => {
 const searchTrips = async (req, res) => {
     try {
         const { departureTime, origin, destination, type, limit = 5, offset = 0 } = req.query;
-        const where = {
-            departureTime: {
-                [Op.gte]: new Date(Date.now() + 60 * 60 * 1000) // Thời gian khởi hành phải sau thời điểm hiện tại ít nhất 1 giờ
-            }
-        };
+        const where = {};
+        const nowPlus1Hour = new Date(Date.now() + 60 * 60 * 1000);
 
+        // Filter theo thời gian khởi hành
         if (departureTime) {
+            const inputDate = new Date(departureTime);
+            const startOfDay = new Date(inputDate.setHours(0, 0, 0, 0));
+            const endOfDay = new Date(inputDate.setHours(23, 59, 59, 999));
+
             where.departureTime = {
-                [Op.gte]: new Date(departureTime),
-                [Op.lte]: new Date(new Date(departureTime).setHours(23, 59, 59))
+                [Op.and]: [
+                    { [Op.gte]: nowPlus1Hour },      // Sau thời điểm hiện tại + 1h
+                    { [Op.gte]: startOfDay },
+                    { [Op.lte]: endOfDay }
+                ]
+            };
+        } else {
+            where.departureTime = {
+                [Op.gte]: nowPlus1Hour
             };
         }
 
